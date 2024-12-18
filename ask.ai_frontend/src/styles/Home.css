@@ -5,7 +5,7 @@ body {
 }
 
 .top-nav {
-  display: flex;
+  display: flex; 
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
@@ -13,9 +13,11 @@ body {
   color: #fff;
 }
 
+
 .logo {
   font-size: 1.5rem;
   font-weight: bold;
+  margin-top: 13px;
 }
 
 .user-section {
@@ -25,7 +27,6 @@ body {
 .main-content {
   display: flex;
   height: calc(100vh - 50px);
-  overflow: hidden;
 }
 
 .sidebar {
@@ -198,6 +199,7 @@ textarea {
   font-weight: bold;
   font-size: 1rem;
   margin-right: 10px;
+  margin-top: 13px;
   transition: background-color 0.3s ease;
 }
 

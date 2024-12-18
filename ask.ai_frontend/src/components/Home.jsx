@@ -18,7 +18,7 @@ const Home = () => {
 
     // Placeholder logic for generating characters
     const newCharacter = {
-      name: "John Doe",
+      name: "Sara",
       image: "https://via.placeholder.com/150", // Placeholder image
     };
 
@@ -62,7 +62,7 @@ const Home = () => {
       <div className="main-content">
         {/* Left Sidebar (Prompt History) */}
         <div className="sidebar">
-          <h3>Prompt History</h3>
+          <h3>My Stories</h3>
           <ul>
             {history.map((item, index) => (
               <li
