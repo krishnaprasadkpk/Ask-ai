@@ -198,9 +198,9 @@ async def generate_character_details(request: Prompt, current_user: User = Depen
 
 
 
-# Request schema
-class ImagePrompt(BaseModel):
-    prompt: str
+# # Request schema
+# class ImagePrompt(BaseModel):
+#     prompt: str
 
 
 # @router.post("/generate-image")
