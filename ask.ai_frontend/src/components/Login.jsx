@@ -85,16 +85,16 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="toggle-option">
-            <p>
-              {isSignUp
-                ? "Already have an account?"
-                : "Don't have an account?"}
-              <span onClick={toggleSignUp} className="signup-link">
-                {isSignUp ? " Log In" : " Sign Up"}
-              </span>
-            </p>
-          </div>
+          {!isSignUp && (
+            <div className="toggle-option">
+               <p>
+               Don't have an account?
+               <span onClick={toggleSignUp} className="signup-link">
+                Sign Up
+               </span>
+               </p>
+            </div>
+          )}     
         </div>
       </div>
     </div>
