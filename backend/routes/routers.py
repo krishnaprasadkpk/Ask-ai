@@ -17,6 +17,7 @@ from .auth import *
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+import traceback
 
 # from pydrive2.drive import GoogleDrive
 import json
@@ -139,6 +140,8 @@ async def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 
+class Prompt(BaseModel):
+    prompt: str
 
 
 @router.post("/generate-characters")
@@ -194,6 +197,114 @@ async def generate_character_details(request: Prompt, current_user: User = Depen
 
 
     return {"message": "Script created successfully", "script_id": str(script_id)}
+
+
+
+@router.post("/generate-image")
+async def generate_image(script_id: PydanticObjectId, current_user: User = Depends(get_current_user)):
+    """
+    Generate images based on character prompts and save them locally.
+    """
+    if not ObjectId.is_valid(script_id):
+        raise HTTPException(status_code=400, detail="Invalid script ID.")
+    
+    try:
+        characters_desc = await CharacterDesc.find({"script_id": ObjectId(script_id), "user_id": current_user.id}).to_list()
+        if not characters_desc:
+            raise HTTPException(status_code=404, detail="No characters found for the given script ID.")
+        print(characters_desc)
+
+        folder_id = "1IrULfBEYg2fLM0QCt9o_Poj-5d33KlMc"
+        generated_characters = []
+
+        for character in characters_desc:
+            try:
+                # Call OpenAI's image generation API
+                response = client.images.generate(
+                    prompt=f"A cinematic character portrait of  "+ character.character_name + character.character_description,
+                    model="black-forest-labs/FLUX.1-schnell",
+                    n=1,
+                )
+                # Get the URL of the generated image
+                image_url = response.data[0].url
+
+                # Save the image locally
+                image_data = requests.get(image_url).content
+                image_path = os.path.join("images", f"image_{character.character_name}.png")
+                with open(image_path, "wb") as image_file:
+                    image_file.write(image_data)
+
+                # Upload to Google Drive
+                file_id, file_url = upload_to_google_drive(image_path, folder_id)
+
+                character_image = Characters(
+                    user_id=character.user_id,
+                    script_id=character.script_id,
+                    character_id=character.id,
+                    character_name=character.character_name,
+                    character_description=character.character_description,
+                    image_url=file_url
+                )
+                await character_image.insert()
+
+                generated_characters.append({
+                    "character_name": character.character_name,
+                    "character_id": str(character.id),
+                    "image_url": file_url,
+                })
+
+                os.remove(image_path)
+
+            except Exception as inner_error:
+                print("Error processing character:", character.character_name)
+                print(inner_error)  # Log the specific error
+                print(traceback.format_exc())  # Print the full stack trace of the inner error
+
+                raise HTTPException(status_code=500, detail=f"Error generating image for character '{character.character_name}': {str(inner_error)}")
+
+        return {"generated_images": generated_characters}
+
+    except Exception as outer_error:
+        print("Error in main process:")
+        print(outer_error)  # Log the outer error
+        print(traceback.format_exc())  # Full stack trace of the outer exception
+
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(outer_error)}\n\nStack Trace:\n{traceback.format_exc()}")
+
+@router.get("/prompts")
+async def get_user_prompts(current_user: User = Depends(get_current_user)):
+    try:
+        # Fetch the prompts submitted by the user
+        prompts = await ScriptPrompt.find(ScriptPrompt.user_id == current_user.id).to_list()
+        
+        if not prompts:
+            raise HTTPException(status_code=404, detail="No prompts found")
+        
+        # Convert prompts to dictionaries
+        return prompts
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving prompts: {str(e)}")
+@router.get("/character/{character_id}")
+async def get_character(character_id: str):
+    character_desc = await Characters.find_one({"character_id": ObjectId(character_id)})
+    if not character_desc:
+        raise HTTPException(status_code=404, detail="Character description not found")
+    return character_desc
+
+@router.get("/generated_characters/{script_id}")
+async def get_generated_characters(script_id: str):
+    if not ObjectId.is_valid(script_id):
+        raise HTTPException(status_code=400, detail="Invalid script_id format")
+    
+    characters = await Characters.find_many({"script_id": ObjectId(script_id)}).to_list()
+    if not characters:
+        raise HTTPException(status_code=404, detail="No characters found for the given script_id")
+    
+    return characters
+
+
+
 
 
 
@@ -256,79 +367,6 @@ async def generate_character_details(request: Prompt, current_user: User = Depen
 #             raise HTTPException(status_code=500, detail=f"Error generating image for prompt '{character_prompt}': {str(e)}")
 
 #     return {"generated_images": generated_characters}
-
-import traceback
-
-import traceback
-
-@router.post("/generate-image")
-async def generate_image(script_id: PydanticObjectId, current_user: User = Depends(get_current_user)):
-    """
-    Generate images based on character prompts and save them locally.
-    """
-    if not ObjectId.is_valid(script_id):
-        raise HTTPException(status_code=400, detail="Invalid script ID.")
-    
-    try:
-        characters_desc = await CharacterDesc.find({"script_id": ObjectId(script_id), "user_id": current_user.id}).to_list()
-        if not characters_desc:
-            raise HTTPException(status_code=404, detail="No characters found for the given script ID.")
-        print(characters_desc)
-
-        folder_id = "1IrULfBEYg2fLM0QCt9o_Poj-5d33KlMc"
-        generated_characters = []
-
-        for character in characters_desc:
-            try:
-                # Call OpenAI's image generation API
-                response = client.images.generate(
-                    prompt=f"create a 3d realistic and cinematic image of  "+ character.character_name + character.character_description,
-                    model="black-forest-labs/FLUX.1-schnell",
-                    n=1,
-                )
-                # Get the URL of the generated image
-                image_url = response.data[0].url
-
-                # Save the image locally
-                image_data = requests.get(image_url).content
-                image_path = os.path.join("images", f"image_{character.character_name}.png")
-                with open(image_path, "wb") as image_file:
-                    image_file.write(image_data)
-
-                # Upload to Google Drive
-                file_id, file_url = upload_to_google_drive(image_path, folder_id)
-
-                character_image = Characters(
-                    script_id=character.script_id,
-                    character_id=character.id,
-                    image_url=file_url
-                )
-                await character_image.insert()
-
-                generated_characters.append({
-                    "character_name": character.character_name,
-                    "character_id": str(character.id),
-                    "image_url": file_url,
-                })
-
-                os.remove(image_path)
-
-            except Exception as inner_error:
-                print("Error processing character:", character.character_name)
-                print(inner_error)  # Log the specific error
-                print(traceback.format_exc())  # Print the full stack trace of the inner error
-
-                raise HTTPException(status_code=500, detail=f"Error generating image for character '{character.character_name}': {str(inner_error)}")
-
-        return {"generated_images": generated_characters}
-
-    except Exception as outer_error:
-        print("Error in main process:")
-        print(outer_error)  # Log the outer error
-        print(traceback.format_exc())  # Full stack trace of the outer exception
-
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(outer_error)}\n\nStack Trace:\n{traceback.format_exc()}")
-
 
 '''    
 @app.post("/generate-character-prompt")

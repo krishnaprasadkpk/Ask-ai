@@ -2,3 +2,4 @@ backend/__pycache__/
 backend/.env
 backend/ask-ai-445105-bd7e05bc345c.json
 backend\.venv
+backend\.vscode
