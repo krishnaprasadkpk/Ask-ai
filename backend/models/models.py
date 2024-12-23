@@ -21,8 +21,8 @@ class Token(Document):
     class Settings:
         collection = "token_data"
 
-class Prompt(Document):
-    prompt: str
+
+
 
 
 class ScriptPrompt(Document):
@@ -45,8 +45,11 @@ class CharacterDesc(Document):
 
 
 class Characters(Document):
+    user_id:PydanticObjectId
     script_id: PydanticObjectId
     character_id: PydanticObjectId
+    character_name: str
+    character_description: str
     image_url:str
 
     class Settings:
