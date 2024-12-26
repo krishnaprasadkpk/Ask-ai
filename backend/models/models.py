@@ -7,7 +7,7 @@ from beanie import Document, Link, PydanticObjectId
 
 class User(Document):
     name: str
-    username: str
+    email: str
     password: str
 
     class Settings:

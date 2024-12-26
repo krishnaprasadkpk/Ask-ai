@@ -33,19 +33,19 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 
-async def get_user(username: str):
-    return await User.find_one({"username": username})
+async def get_user(email: str):
+    return await User.find_one({"email": email})
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     payload = decode_access_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
-    username:str = payload.get("sub")
-    if username is None:
+    email:str = payload.get("sub")
+    if email is None:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    user = await get_user(username)
+    user = await get_user(email)
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
     return user
@@ -103,16 +103,16 @@ def upload_to_google_drive(file_path, folder_id):
 
 @router.post("/register")
 async def register_user(user: User):
-    # Check if the username already exists
-    existing_user = await User.find_one(User.username == user.username)
+    # Check if the user already exists
+    existing_user = await User.find_one(User.email == user.email)
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="User already registered")
     
     # Hash the password before saving
     hashed_password = get_password_hash(user.password)
     
     # Create a new user and save to database
-    new_user = User(user_id=str(uuid4()), name=user.name, username=user.username, password=hashed_password)
+    new_user = User(user_id=str(uuid4()), name=user.name, email=user.email, password=hashed_password)
     await new_user.insert()
     
     return {"msg": "User registered successfully"}
@@ -121,12 +121,12 @@ async def register_user(user: User):
 @router.post("/login")
 async def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
     # Check if the user exists in the database
-    db_user = await User.find_one(User.username == form_data.username)
+    db_user = await User.find_one(User.email == form_data.email)
     if not db_user or not verify_password(form_data.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Generate JWT token
-    access_token = create_access_token(data={"sub": db_user.username})
+    access_token = create_access_token(data={"sub": db_user.email})
     
     # Save the token in the token_data collection (optional)
     token = Token(access_token=access_token, token_type="bearer")
