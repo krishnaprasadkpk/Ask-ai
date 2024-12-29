@@ -18,6 +18,9 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import traceback
+import io
+from googleapiclient.http import MediaIoBaseDownload
+from fastapi.responses import StreamingResponse
 
 # from pydrive2.drive import GoogleDrive
 import json
@@ -121,7 +124,7 @@ async def register_user(user: User):
 @router.post("/login")
 async def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
     # Check if the user exists in the database
-    db_user = await User.find_one(User.email == form_data.email)
+    db_user = await User.find_one(User.email == form_data.username)
     if not db_user or not verify_password(form_data.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
@@ -132,10 +135,7 @@ async def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
     token = Token(access_token=access_token, token_type="bearer")
     await token.insert()
     
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-
+    return {"access_token": access_token, "token_type": "bearer", "Name": db_user.name}
 # Initialize FastAPI
 
 
@@ -200,14 +200,14 @@ async def generate_character_details(request: Prompt, current_user: User = Depen
 
 
 
-@router.post("/generate-image")
-async def generate_image(script_id: PydanticObjectId, current_user: User = Depends(get_current_user)):
+@router.post("/generate-image/{script_id}")
+async def generate_image(script_id: str, current_user: User = Depends(get_current_user)):
     """
     Generate images based on character prompts and save them locally.
     """
     if not ObjectId.is_valid(script_id):
         raise HTTPException(status_code=400, detail="Invalid script ID.")
-    
+    script_id = ObjectId(script_id)
     try:
         characters_desc = await CharacterDesc.find({"script_id": ObjectId(script_id), "user_id": current_user.id}).to_list()
         if not characters_desc:
@@ -304,6 +304,33 @@ async def get_generated_characters(script_id: str):
     return characters
 
 
+@router.get("/fetch-image/{file_id}")
+async def fetch_image(file_id: str):
+    try:
+        # Authenticate Google Drive API
+        drive_service = authenticate_drive()
+
+        # Request file metadata to check if the file exists and get mimeType
+        file = drive_service.files().get(fileId=file_id, fields="mimeType").execute()
+
+        # Check if the file is an image (mimeType check)
+        if "image/" not in file["mimeType"]:
+            raise HTTPException(status_code=400, detail="The file is not an image.")
+
+        # Download the file content
+        request = drive_service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            _, done = downloader.next_chunk()
+        fh.seek(0)  # Reset the file pointer to the beginning
+
+        # Return the image as a StreamingResponse to the client
+        return StreamingResponse(fh, media_type=file["mimeType"])
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching image: {str(e)}")
 
 
 
