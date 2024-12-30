@@ -21,13 +21,11 @@ const Login = () => {
     if (isSignUp) {
       // Simple sign-up logic
       console.log("Account created with:", { name, email, password });
-      alert("Account created successfully! Please log in.");
       toggleSignUp();
     } else {
       // Simple login logic
       console.log("Logging in with:", { email, password });
       if (email && password) {
-        alert("Login successful!");
         navigate("/home"); // Redirect to home page
       } else {
         alert("Please enter both email and password.");
