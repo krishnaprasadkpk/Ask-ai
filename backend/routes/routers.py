@@ -13,6 +13,7 @@ import google.generativeai as genai
 from .state_manager import app_state
 from models.models import *
 from .auth import *
+import logging
 # from pydrive2.auth import GoogleAuth
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -331,10 +332,72 @@ async def fetch_image(file_id: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching image: {str(e)}")
+    
+@router.get("/fetch-history")
+async def fetch_history(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Fetch the history of prompts and generated characters for the given user ID.
+    """
+    
+
+    try:
+        # Fetch script prompts created by the user
+        script_prompts = await ScriptPrompt.find({"user_id": current_user.id}).to_list()
+
+        if not script_prompts:
+            raise HTTPException(status_code=404, detail="No prompts found for this user")
+
+        # Fetch characters related to the user's prompts
+        history = []
+        for prompt in script_prompts:
+            
+            characters = await Characters.find({"script_id": prompt.id}).to_list()
+            
+            history.append({
+                "script_id": str(prompt.id),
+                "script": prompt.script,
+                "characters": [
+                    {
+                        "character_name": char.character_name,
+                        "character_description": char.character_description,
+                        "image_url": char.image_url
+                    } for char in characters
+                ]
+            })
+
+        return history
 
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred while fetching history: {str(e)}")
 
 
+# @router.post("/save-prompt")
+# async def save_prompt(prompt_history: PromptHistory):
+#     # Check if the prompt already exists
+#     existing_prompt = await PromptHistory.find_one(PromptHistory.prompt == prompt_history.prompt)
+#     if existing_prompt:
+#         raise HTTPException(status_code=400, detail="Prompt already exists")
+    
+#     # Create a new document
+#     prompt_history.generated_time = datetime.now(timezone.utc)  # Ensure the generated time is set
+#     new_prompt = PromptHistory(**prompt_history.model_dump())
+
+#     # Save to the database
+#     await new_prompt.insert()
+    
+#     return {"message": "Prompt saved successfully"}
+
+# @router.get("/prompt-history/{user_id}", response_model=List[PromptHistory])
+# async def get_prompt_history(current_user: User = Depends(get_current_user)):
+#     prompts = await PromptHistory.find(PromptHistory.user_id == current_user.id).to_list()
+
+#     if not prompts:
+#         raise HTTPException(status_code=404, detail="No prompts found for this user")
+    
+#     return prompts
 
 # # Request schema
 # class ImagePrompt(BaseModel):

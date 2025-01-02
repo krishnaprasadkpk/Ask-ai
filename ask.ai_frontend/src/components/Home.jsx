@@ -3,6 +3,8 @@ import "./../styles/Home.css";
 import { AuthContext } from "../utils/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
 
 
@@ -17,6 +19,30 @@ const Home = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const [imageUrls, setImageUrls] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [loadingState, setLoadingState] = useState({});
+
+  const fetchHistory  = async () => {
+    try{
+      const token = authState.token;
+      if (!token) {
+        console.error("Token not found");
+        return;
+      }
+      const response = await axios.get("http://127.0.0.1:8000/fetch-history", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setHistory(response.data);
+    }catch (error) {
+      console.error("Error fetching prompt history:", error);
+    }
+  };
+  useEffect(() => {
+    // Fetch history when the component mounts
+    fetchHistory();
+  }, []); 
 
 
   const handleGenerate = async () => {
@@ -28,17 +54,20 @@ const Home = () => {
     }
 
     setCharacters([]); // Reset the characters array
-
+    setLoading(true);
+    
     // Placeholder logic for generating characters
     // const newCharacter = {
     //   name: "Sara",
     //   image: "https://via.placeholder.com/150", // Placeholder image
     // };
-
+    
     try{
       const token = authState.token;
       if(!token){
         console.error("Token not found");
+        
+        setLoading(false);
         return;
       } // or sessionStorage.getItem('token')
 
@@ -54,9 +83,12 @@ const Home = () => {
       const {script_id} = postResponse.data;
       if (!script_id) {
         alert("Failed to generate script ID.");
+        
+        setLoading(false);
         return;
       }
       console.log("scriptid:",script_id)
+      
       // const imageData = { script_id }
       await axios.post(`http://127.0.0.1:8000/generate-image/${script_id}`,
         {},
@@ -66,6 +98,7 @@ const Home = () => {
           },
         }
       );
+      
 
       // if (imageResponse.data.generated_images) {
       //   setCharacters(imageResponse.data.generated_images);
@@ -75,13 +108,41 @@ const Home = () => {
       );
       setCharacters(getResponse.data);
       
-      setPrompt("");
-      if (!history.includes(prompt)) {
-        setHistory(prev => [prompt, ...prev]);
+      if (!history.some(item => item.prompt === prompt)) {
+        const newHistoryItem = {
+          prompt: prompt,
+          characters: getResponse.data,
+          generated_time: new Date().toISOString(),
+        };
+        console.log(newHistoryItem);
+        // Save the history to the backend
+        await axios.post(
+          "http://127.0.0.1:8000/save-prompt",
+          newHistoryItem,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Update local history state
+        setHistory(prev => [newHistoryItem, ...prev]);
       }
+
+      
+      setPrompt("");
+      // if (!history.includes(prompt)) {
+      //   setHistory(prev => [prompt, ...prev]);
+      // }
+      
+      
     } catch(error){
       console.error("Error generating characters or images:", error);
       alert("Failed to generate characters. Please try again.");
+    } finally {
+      
+      setLoading(false);
     }
 
     
@@ -105,8 +166,10 @@ const Home = () => {
   useEffect(() => {
     const fetchImages = async () => {
       const updatedImageUrls = {}; // Store the image URLs for each character
-  
+      const updatedLoadingState = {};
+      
       for (let char of characters) {
+        updatedLoadingState[char.character_name] = true;
         const fileId = getFileIdFromUrl(char.image_url);
         if (fileId) {
           const imageUrl = await fetchImage(fileId); // Call fetchImage for each character
@@ -114,9 +177,11 @@ const Home = () => {
             updatedImageUrls[char.character_name] = imageUrl; // Store it in the updatedImageUrls object
           }
         }
+        updatedLoadingState[char.character_name] = false;
       }
   
       setImageUrls(updatedImageUrls); // Update state once all images are fetched
+      setLoadingState(updatedLoadingState);
     };
   
     if (characters.length > 0) {
@@ -126,8 +191,9 @@ const Home = () => {
   
 
 
-  const handlePromptClick = (selectedPrompt) => {
-    setPrompt(selectedPrompt);
+  const handlePromptClick = (selectedItem) => {
+    setPrompt(selectedItem.script);
+    setCharacters(selectedItem.characters)
   };
 
   const toggleDropdown = () => {
@@ -180,10 +246,10 @@ const Home = () => {
             {history.map((item, index) => (
               <li
                 key={index}
-                title={item} // Shows full prompt on hover
+                title={item.script} // Shows full prompt on hover
                 onClick={() => handlePromptClick(item)}
               >
-                {item.length > 30 ? item.slice(0, 30) + "..." : item}
+                {item.script.length > 30 ? item.script.slice(0, 30) + "..." : item}
               </li>
             ))}
           </ul>
@@ -205,16 +271,29 @@ const Home = () => {
               Generate Characters
             </button>
           </div>
+
+          {loading && (
+            <div className="progress-container">
+              <Box sx={{ display: 'flex' }} className="centered-progress">
+                <CircularProgress size={40} color="secondary" />
+              </Box>
+            </div>
+          )}
+
           <div className="character-gallery">
             {characters.length > 0 &&
               characters.map((char, index) => (
                 <div key={index} className="character-card">
                   <div className="character-container">
-                    <img
-                      src={imageUrls[char.character_name]} // Use the fetched image URL
-                      alt={char.character_name}
-                      className="character-image"
-                    />
+                    {loadingState[char.character_name] ? (
+                      <CircularProgress size={40} color="secondary" />
+                    ) : (
+                      <img
+                        src={imageUrls[char.character_name]} // Use the fetched image URL
+                        alt={char.character_name}
+                        className="character-image"
+                      />
+                    )}
                     <p className="character-name">{char.character_name}</p>
                   </div>
                 </div>

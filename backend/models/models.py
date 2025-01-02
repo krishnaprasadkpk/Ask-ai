@@ -1,7 +1,8 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
-from pydantic import Field, constr, field_validator
+
+from pydantic import BaseModel, Field, constr, field_validator
 from beanie import Document, Link, PydanticObjectId
 
 
@@ -55,6 +56,19 @@ class Characters(Document):
     class Settings:
         collection = "characters"
 
+# class Character(BaseModel):
+#     def __init__(self, character_name: str, image_url: str):
+#         self.character_name = character_name
+#         self.image_url = image_url
+
+# class PromptHistory(Document):
+#     prompt: str
+#     characters: List[Dict[str,str]]
+#     generated_time: datetime
+#     user_id: str  # To associate the prompt history with a user
+
+#     class Config:
+#         collection = "prompt_history"
 
 # class CharacterImage(Document):
 #     character_id: str  # Reference to the Character ID
