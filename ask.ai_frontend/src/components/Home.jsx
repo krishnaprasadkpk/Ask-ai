@@ -5,10 +5,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
-
-
-
-
+import { MdAddCircleOutline } from "react-icons/md";
+import ReactModal from "react-modal";
+import { AiOutlineClose } from "react-icons/ai";
 
 
 const Home = () => {
@@ -21,6 +20,28 @@ const Home = () => {
   const [imageUrls, setImageUrls] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedImage(null);
+  };
+
+  const handleDownloadImage = () => {
+    if (selectedImage) {
+      const link = document.createElement("a");
+      link.href = selectedImage;
+      const characterName = Object.keys(imageUrls).find(
+        (name) => imageUrls[name] === selectedImage
+      ) || "Character Name";
+      
+      link.download = `${characterName}.jpg`; // Set your preferred file name
+      link.click();
+    }
+  };
 
   const fetchHistory  = async () => {
     try{
@@ -139,7 +160,7 @@ const Home = () => {
       
     } catch(error){
       console.error("Error generating characters or images:", error);
-      alert("Failed to generate characters. Please try again.");
+      // alert("Failed to generate characters. Please try again.");
     } finally {
       
       setLoading(false);
@@ -167,6 +188,10 @@ const Home = () => {
     const fetchImages = async () => {
       const updatedImageUrls = {}; // Store the image URLs for each character
       const updatedLoadingState = {};
+
+      characters.forEach(char => {
+        updatedLoadingState[char.character_name] = true;
+      });
       
       for (let char of characters) {
         updatedLoadingState[char.character_name] = true;
@@ -213,6 +238,11 @@ const Home = () => {
     return match ? match[1] : null;
   };
 
+  const handleNewScript = () => {
+    setPrompt(""); // Clear the prompt box
+    setCharacters([]); // Clear the characters array
+  };
+
   
 
 
@@ -223,7 +253,7 @@ const Home = () => {
         <div className="logo">Ask.AI</div>
         <div className="user-section">
           <div className="profile-icon" onClick={toggleDropdown}>
-            {authState.name ? authState.name.slice(0, 2).toUpperCase() : "AM"}
+            {authState.name ? authState.name.slice(0, 2).toUpperCase() : "GU"}
           </div>
           {showDropdown && (
             <div className="dropdown-menu">
@@ -241,9 +271,20 @@ const Home = () => {
       <div className="main-content">
         {/* Left Sidebar (Prompt History) */}
         <div className="sidebar">
-          <h3>My Stories</h3>
+          <div className = "sidebar-header">
+            <h3>My Stories</h3>
+            <MdAddCircleOutline
+                onClick={handleNewScript}
+                style={{
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#1976d2", // Stylish color
+                }}
+                titleAccess="Create New Script"
+            />
+          </div>
           <ul>
-            {history.map((item, index) => (
+            {history.slice().reverse().map((item, index) => (
               <li
                 key={index}
                 title={item.script} // Shows full prompt on hover
@@ -292,6 +333,7 @@ const Home = () => {
                         src={imageUrls[char.character_name]} // Use the fetched image URL
                         alt={char.character_name}
                         className="character-image"
+                        onClick={() => handleImageClick(imageUrls[char.character_name])}
                       />
                     )}
                     <p className="character-name">{char.character_name}</p>
@@ -301,6 +343,33 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      <ReactModal
+        isOpen={!!selectedImage}
+        onRequestClose={handleCloseModal}
+        contentLabel="Image Modal"
+        className="image-modal"
+        overlayClassName="image-modal-overlay"
+        ariaHideApp={false}
+      >
+        <div className="modal-content">
+          <AiOutlineClose 
+            className="close-icon" 
+            onClick={handleCloseModal} 
+          />
+          <img src={selectedImage} alt="Large view" className="large-image" />
+          <p className="character-modal-name">
+            {Object.keys(imageUrls).find(
+              (name) => imageUrls[name] === selectedImage
+            ) || "Character Name"}
+          </p>
+          <button onClick={handleDownloadImage} className="btn-download">
+            Download
+          </button>
+          
+        </div>
+      </ReactModal>  
+
     </div>
   );
 };

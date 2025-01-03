@@ -312,11 +312,13 @@ async def fetch_image(file_id: str):
         drive_service = authenticate_drive()
 
         # Request file metadata to check if the file exists and get mimeType
-        file = drive_service.files().get(fileId=file_id, fields="mimeType").execute()
+
+        # file = drive_service.files().get(fileId=file_id, fields="mimeType").execute()
 
         # Check if the file is an image (mimeType check)
-        if "image/" not in file["mimeType"]:
-            raise HTTPException(status_code=400, detail="The file is not an image.")
+
+        # if "image/" not in file["mimeType"]:
+        #     raise HTTPException(status_code=400, detail="The file is not an image.")
 
         # Download the file content
         request = drive_service.files().get_media(fileId=file_id)
@@ -328,7 +330,7 @@ async def fetch_image(file_id: str):
         fh.seek(0)  # Reset the file pointer to the beginning
 
         # Return the image as a StreamingResponse to the client
-        return StreamingResponse(fh, media_type=file["mimeType"])
+        return StreamingResponse(fh, media_type="image/jpeg")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching image: {str(e)}")
