@@ -31,7 +31,7 @@ const Login = () => {
           const payload = { name, email, password };
   
           
-          const response = await axios.post("http://127.0.0.1:8000/register", payload, {
+          const response = await axios.post("https://ask-ai-backend.up.railway.app/register", payload, {
             headers: {
               "Content-Type": "application/json", 
             },
@@ -59,7 +59,7 @@ const Login = () => {
           formData.append("password", password);
   
           
-          const response = await axios.post("http://127.0.0.1:8000/login", formData, {
+          const response = await axios.post("https://ask-ai-backend.up.railway.app/login", formData, {
             headers: {
               "Content-Type": "application/x-www-form-urlencoded", 
             },
