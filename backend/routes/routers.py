@@ -1,5 +1,7 @@
 
+import base64
 import re
+import tempfile
 from bson import ObjectId
 from fastapi import Depends, FastAPI, HTTPException, APIRouter, Path, Query
 import requests
@@ -73,10 +75,30 @@ model = genai.GenerativeModel(
 
 
 def authenticate_drive():
-    credentials = service_account.Credentials.from_service_account_file(
-        "ask-ai-445105-bd7e05bc345c.json",
-        scopes=["https://www.googleapis.com/auth/drive.file"]
-    )
+    credentials_file_path = "ask-ai-445105-bd7e05bc345c.json"
+    if os.path.exists(credentials_file_path):
+        credentials = service_account.Credentials.from_service_account_file(
+            "ask-ai-445105-bd7e05bc345c.json",
+            scopes=["https://www.googleapis.com/auth/drive.file"]
+        )
+    else:
+        credentials_base64 = os.getenv("GOOGLE_CREDENTIALS")
+        
+        if credentials_base64 is None:
+            raise ValueError("Google credentials are missing, and no file or base64 string is available.")
+        
+        
+        credentials_json = base64.b64decode(credentials_base64)
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(credentials_json)
+            temp_file_path = temp_file.name
+        
+        
+        credentials = service_account.Credentials.from_service_account_file(
+            temp_file_path,
+            scopes=["https://www.googleapis.com/auth/drive.file"]
+        )
+
     drive_service = build('drive', 'v3', credentials=credentials)
     return drive_service
 
