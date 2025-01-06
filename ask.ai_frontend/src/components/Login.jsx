@@ -1,15 +1,15 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // Import axios
+import axios from "axios"; 
 import { AuthContext } from "../utils/AuthContext";
 import "./../styles/Login.css";
 
 const Login = () => {
-  const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign-up
-  const [email, setEmail] = useState(""); // Email state
-  const [password, setPassword] = useState(""); // Password state
-  const [name, setName] = useState(""); // Name state for sign-up
-  const navigate = useNavigate(); // Navigation hook
+  const [isSignUp, setIsSignUp] = useState(false); 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); 
+  const [name, setName] = useState(""); 
+  const navigate = useNavigate(); 
   const { setAuthData } = useContext(AuthContext);
 
   const toggleSignUp = () => {
@@ -27,20 +27,20 @@ const Login = () => {
         console.log("Signing up with:", { name, email, password });
   
         if (name && email && password) {
-          // Prepare the payload for the POST request
+          
           const payload = { name, email, password };
   
-          // Send the data to the backend
+          
           const response = await axios.post("http://127.0.0.1:8000/register", payload, {
             headers: {
-              "Content-Type": "application/json", // JSON format for sign-up
+              "Content-Type": "application/json", 
             },
           });
   
           console.log("Sign-up response:", response);
   
           alert("Registration successful! Please log in.");
-          toggleSignUp(); // Switch to login view
+          toggleSignUp(); 
         } else {
           alert("Please fill out all fields.");
         }
@@ -53,15 +53,15 @@ const Login = () => {
         console.log("Logging in with:", { email, password });
   
         if (email && password) {
-          // Prepare form data for the request
+          
           const formData = new URLSearchParams();
-          formData.append("username", email); // 'username' is expected in OAuth2PasswordRequestForm
+          formData.append("username", email); 
           formData.append("password", password);
   
-          // Send the form data in the request
+          
           const response = await axios.post("http://127.0.0.1:8000/login", formData, {
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded", // Ensure correct content type
+              "Content-Type": "application/x-www-form-urlencoded", 
             },
           });
   
@@ -69,11 +69,11 @@ const Login = () => {
 
           const { access_token, Name } = response.data;
           setAuthData(access_token, Name);
-          // Store the JWT token in localStorage or cookies
+          
           
   
           // alert("Login successful!");
-          navigate("/home"); // Redirect to the home page
+          navigate("/home"); 
         } else {
           alert("Please enter both email and password.");
         }

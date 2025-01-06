@@ -39,7 +39,7 @@ const Home = () => {
         (name) => imageUrls[name] === selectedImage
       ) || "Character Name";
       
-      link.download = `${characterName}.jpg`; // Set your preferred file name
+      link.download = `${characterName}.jpg`; 
       link.click();
     }
   };
@@ -68,7 +68,7 @@ const Home = () => {
 
 
   const handleGenerate = async () => {
-    // Validation to check if the prompt is empty or contains only whitespace
+    
 
     if (!prompt.trim()) {
       alert("Please enter a prompt!");
@@ -185,7 +185,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchImages = async () => {
-      const updatedImageUrls = {}; // Store the image URLs for each character
+      const updatedImageUrls = {};
       const updatedLoadingState = {};
 
       characters.forEach(char => {
@@ -196,22 +196,22 @@ const Home = () => {
         updatedLoadingState[char.character_name] = true;
         const fileId = getFileIdFromUrl(char.image_url);
         if (fileId) {
-          const imageUrl = await fetchImage(fileId); // Call fetchImage for each character
+          const imageUrl = await fetchImage(fileId); 
           if (imageUrl) {
-            updatedImageUrls[char.character_name] = imageUrl; // Store it in the updatedImageUrls object
+            updatedImageUrls[char.character_name] = imageUrl; 
           }
         }
         updatedLoadingState[char.character_name] = false;
       }
   
-      setImageUrls(updatedImageUrls); // Update state once all images are fetched
+      setImageUrls(updatedImageUrls); 
       setLoadingState(updatedLoadingState);
     };
   
     if (characters.length > 0) {
       fetchImages();
     }
-  }, [characters]); // Re-run this when characters change
+  }, [characters]); 
   
 
 
@@ -230,7 +230,7 @@ const Home = () => {
     navigate("/");
   };
 
-  // Helper function to extract file ID from Google Drive URL
+  //  extract file ID from Google Drive URL
   const getFileIdFromUrl = (url) => {
     const regex = /(?:\/d\/)(.*?)(?:\/|$)/;
     const match = url.match(regex);
@@ -238,12 +238,12 @@ const Home = () => {
   };
 
   const handleNewScript = () => {
-    setPrompt(""); // Clear the prompt box
-    setCharacters([]); // Clear the characters array
+    setPrompt(""); 
+    setCharacters([]); 
   };
 
   const handleDeleteScript = async (scriptId, e) => {
-    e.stopPropagation(); // Prevent triggering the handlePromptClick when clicking delete
+    e.stopPropagation(); 
     
     try {
       const token = authState.token;
@@ -252,7 +252,7 @@ const Home = () => {
         return;
       }
 
-      // Call the delete endpoint
+      // delete endpoint
       await axios.delete(`http://127.0.0.1:8000/delete-script/${scriptId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -262,7 +262,7 @@ const Home = () => {
       // Update the history state after successful deletion
       setHistory(prevHistory => prevHistory.filter(item => item.script_id !== scriptId));
 
-      // If the deleted script was currently displayed, clear the prompt and characters
+      
       if (prompt && characters.length > 0) {
         const currentScript = history.find(item => item.script === prompt);
         if (currentScript && currentScript.script_id === scriptId) {
@@ -319,7 +319,7 @@ const Home = () => {
             {history.slice().reverse().map((item, index) => (
               <li
                 key={index}
-                title={item.script} // Shows full prompt on hover
+                title={item.script} 
                 onClick={() => handlePromptClick(item)}
               >
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -380,7 +380,7 @@ const Home = () => {
                       <CircularProgress size={40} color="secondary" />
                     ) : (
                       <img
-                        src={imageUrls[char.character_name]} // Use the fetched image URL
+                        src={imageUrls[char.character_name]} 
                         alt={char.character_name}
                         className="character-image"
                         onClick={() => handleImageClick(imageUrls[char.character_name])}

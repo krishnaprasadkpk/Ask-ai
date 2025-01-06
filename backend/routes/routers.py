@@ -56,7 +56,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 
 client=OpenAI(api_key=os.getenv("TOGETHER_API_KEY"), base_url="https://api.together.xyz/v1")
-# Load environment variables
+
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 generation_config = {
   "temperature": 1,
@@ -84,38 +84,38 @@ def upload_to_google_drive(file_path, folder_id):
     drive_service = authenticate_drive()
 
     file_metadata = {
-        'name': file_path.split("/")[-1],  # Using the filename from the path
-        'parents': [folder_id]  # Folder ID where the file should be uploaded
+        'name': file_path.split("/")[-1],  
+        'parents': [folder_id]  
     }
 
     media = MediaFileUpload(file_path, mimetype='image/png')
 
-    # Create the file on Google Drive
+    
     file = drive_service.files().create(
         body=file_metadata,
         media_body=media,
-        fields='id, webViewLink'  # Fields to return
+        fields='id, webViewLink'  
     ).execute()
 
-    # Return the file ID and URL
+    
     return file['id'], file['webViewLink']
 
-# Initialize OpenAI API key
+
 
 
 
 
 @router.post("/register")
 async def register_user(user: User):
-    # Check if the user already exists
+    
     existing_user = await User.find_one(User.email == user.email)
     if existing_user:
         raise HTTPException(status_code=400, detail="User already registered")
     
-    # Hash the password before saving
+    
     hashed_password = get_password_hash(user.password)
     
-    # Create a new user and save to database
+    
     new_user = User(user_id=str(uuid4()), name=user.name, email=user.email, password=hashed_password)
     await new_user.insert()
     
@@ -124,20 +124,20 @@ async def register_user(user: User):
 
 @router.post("/login")
 async def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
-    # Check if the user exists in the database
+    
     db_user = await User.find_one(User.email == form_data.username)
     if not db_user or not verify_password(form_data.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Generate JWT token
+    
     access_token = create_access_token(data={"sub": db_user.email})
     
-    # Save the token in the token_data collection (optional)
+    
     token = Token(access_token=access_token, token_type="bearer")
     await token.insert()
     
     return {"access_token": access_token, "token_type": "bearer", "Name": db_user.name}
-# Initialize FastAPI
+
 
 
 
@@ -179,13 +179,13 @@ async def generate_character_details(request: Prompt, current_user: User = Depen
     script_id = new_script_prompt.id
 
     for prompt in characters_list:
-    # Split the prompt at the first colon
+    
         name, description = prompt.split(":", 1)
-    # Trim any leading or trailing spaces
+    
         name = name.strip()
         description = description.strip()
     
-    # Append the split data to the list
+    
         character_description=CharacterDesc(
             user_id=str(current_user.id),
             script_id=script_id,
@@ -226,16 +226,15 @@ async def generate_image(script_id: str, current_user: User = Depends(get_curren
                     model="black-forest-labs/FLUX.1-schnell",
                     n=1,
                 )
-                # Get the URL of the generated image
+                
                 image_url = response.data[0].url
 
-                # Save the image locally
                 image_data = requests.get(image_url).content
                 image_path = os.path.join("image", f"image_{character.character_name}.png")
                 with open(image_path, "wb") as image_file:
                     image_file.write(image_data)
 
-                # Upload to Google Drive
+                
                 file_id, file_url = upload_to_google_drive(image_path, folder_id)
 
                 character_image = Characters(
@@ -258,8 +257,8 @@ async def generate_image(script_id: str, current_user: User = Depends(get_curren
 
             except Exception as inner_error:
                 print("Error processing character:", character.character_name)
-                print(inner_error)  # Log the specific error
-                print(traceback.format_exc())  # Print the full stack trace of the inner error
+                print(inner_error)  
+                print(traceback.format_exc())  
 
                 raise HTTPException(status_code=500, detail=f"Error generating image for character '{character.character_name}': {str(inner_error)}")
 
@@ -267,21 +266,21 @@ async def generate_image(script_id: str, current_user: User = Depends(get_curren
 
     except Exception as outer_error:
         print("Error in main process:")
-        print(outer_error)  # Log the outer error
-        print(traceback.format_exc())  # Full stack trace of the outer exception
+        print(outer_error)  
+        print(traceback.format_exc())  
 
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(outer_error)}\n\nStack Trace:\n{traceback.format_exc()}")
 
 @router.get("/prompts")
 async def get_user_prompts(current_user: User = Depends(get_current_user)):
     try:
-        # Fetch the prompts submitted by the user
+        
         prompts = await ScriptPrompt.find(ScriptPrompt.user_id == current_user.id).to_list()
         
         if not prompts:
             raise HTTPException(status_code=404, detail="No prompts found")
         
-        # Convert prompts to dictionaries
+        
         return prompts
     
     except Exception as e:
@@ -308,26 +307,17 @@ async def get_generated_characters(script_id: str):
 @router.get("/fetch-image/{file_id}")
 async def fetch_image(file_id: str):
     try:
-        # Authenticate Google Drive API
+        
         drive_service = authenticate_drive()
 
-        # Request file metadata to check if the file exists and get mimeType
-
-        # file = drive_service.files().get(fileId=file_id, fields="mimeType").execute()
-
-        # Check if the file is an image (mimeType check)
-
-        # if "image/" not in file["mimeType"]:
-        #     raise HTTPException(status_code=400, detail="The file is not an image.")
-
-        # Download the file content
+        
         request = drive_service.files().get_media(fileId=file_id)
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
         while done is False:
             _, done = downloader.next_chunk()
-        fh.seek(0)  # Reset the file pointer to the beginning
+        fh.seek(0)  
 
         # Return the image as a StreamingResponse to the client
         return StreamingResponse(fh, media_type="image/jpeg")
@@ -339,19 +329,17 @@ async def fetch_image(file_id: str):
 async def fetch_history(
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Fetch the history of prompts and generated characters for the given user ID.
-    """
+    
     
 
     try:
-        # Fetch script prompts created by the user
+        
         script_prompts = await ScriptPrompt.find({"user_id": current_user.id}).to_list()
 
         if not script_prompts:
             raise HTTPException(status_code=404, detail="No prompts found for this user")
 
-        # Fetch characters related to the user's prompts
+        
         history = []
         for prompt in script_prompts:
             
