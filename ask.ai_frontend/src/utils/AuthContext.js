@@ -5,7 +5,7 @@ export const AuthContext=createContext();
 export const AuthProvider = ({ children }) => {
     const [authState, setAuthState] = useState({
         token: localStorage.getItem("access_token") || null,
-        name: null,
+        name: localStorage.getItem("name") || null,
     });
 
     const setAuthData = (token, name) => {
@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem("access_token");
+        localStorage.removeItem("name");
         setAuthState({token: null, name: null});
 
     };

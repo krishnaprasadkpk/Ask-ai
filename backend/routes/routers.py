@@ -231,7 +231,7 @@ async def generate_image(script_id: str, current_user: User = Depends(get_curren
 
                 # Save the image locally
                 image_data = requests.get(image_url).content
-                image_path = os.path.join("images", f"image_{character.character_name}.png")
+                image_path = os.path.join("image", f"image_{character.character_name}.png")
                 with open(image_path, "wb") as image_file:
                     image_file.write(image_data)
 
