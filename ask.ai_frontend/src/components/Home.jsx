@@ -51,7 +51,7 @@ const Home = () => {
         console.error("Token not found");
         return;
       }
-      const response = await axios.get("http://127.0.0.1:8000/fetch-history", {
+      const response = await axios.get("https://ask-ai-backend.up.railway.app/fetch-history", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -94,7 +94,7 @@ const Home = () => {
       } // or sessionStorage.getItem('token')
 
       const postResponse = await axios.post(
-        "http://127.0.0.1:8000/generate-characters",
+        "https://ask-ai-backend.up.railway.app/generate-characters",
         {prompt: prompt},
         {
           headers:{
@@ -112,7 +112,7 @@ const Home = () => {
       console.log("scriptid:",script_id)
       
       // const imageData = { script_id }
-      await axios.post(`http://127.0.0.1:8000/generate-image/${script_id}`,
+      await axios.post(`https://ask-ai-backend.up.railway.app/generate-image/${script_id}`,
         {},
         {
           headers:{
@@ -126,7 +126,7 @@ const Home = () => {
       //   setCharacters(imageResponse.data.generated_images);
       // }
       const getResponse = await axios.get(
-        `http://127.0.0.1:8000/generated_characters/${script_id}`
+        `https://ask-ai-backend.up.railway.app/generated_characters/${script_id}`
       );
       setCharacters(getResponse.data);
 
@@ -171,7 +171,7 @@ const Home = () => {
 
   const fetchImage = async (fileId) => {
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/fetch-image/${fileId}`, {
+      const response = await axios.get(`https://ask-ai-backend.up.railway.app/fetch-image/${fileId}`, {
         responseType: 'blob',
       });
 
@@ -253,7 +253,7 @@ const Home = () => {
       }
 
       // delete endpoint
-      await axios.delete(`http://127.0.0.1:8000/delete-script/${scriptId}`, {
+      await axios.delete(`https://ask-ai-backend.up.railway.app/delete-script/${scriptId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
