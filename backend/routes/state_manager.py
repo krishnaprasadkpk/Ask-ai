@@ -1,4 +1,4 @@
-# state_manager.py
+
 class AppState:
     def __init__(self):
         self.generated_characters = None
