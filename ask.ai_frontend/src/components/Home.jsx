@@ -64,7 +64,7 @@ const Home = () => {
   useEffect(() => {
     // Fetch history when the component mounts
     fetchHistory();
-  }, []); 
+  }, [fetchHistory]); 
 
 
   const handleGenerate = async () => {
