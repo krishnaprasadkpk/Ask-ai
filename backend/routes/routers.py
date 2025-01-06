@@ -374,7 +374,16 @@ async def fetch_history(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while fetching history: {str(e)}")
-
+    
+@router.delete("/delete-script/{script_id}")
+async def delete_script(script_id: str, user=Depends(get_current_user)):
+    script = await ScriptPrompt.find_one({"_id": PydanticObjectId(script_id), "user_id": user.id})
+    
+    if not script:
+        raise HTTPException(status_code=404, detail="Script not found")
+    
+    await script.delete()
+    return {"message": "Script deleted successfully"}
 
 # @router.post("/save-prompt")
 # async def save_prompt(prompt_history: PromptHistory):
