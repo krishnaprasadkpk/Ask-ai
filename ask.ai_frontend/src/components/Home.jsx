@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import "./../styles/Home.css";
 import { AuthContext } from "../utils/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -44,9 +44,9 @@ const Home = () => {
     }
   };
 
-  const fetchHistory  = async () => {
-    try{
-      const token = authState.token;
+  const fetchHistory = useCallback(async () => {
+    try {
+      const token = authState?.token;
       if (!token) {
         console.error("Token not found");
         return;
@@ -57,10 +57,10 @@ const Home = () => {
         },
       });
       setHistory(response.data);
-    }catch (error) {
+    } catch (error) {
       console.error("Error fetching prompt history:", error);
     }
-  };
+  }, [authState?.token]);
   useEffect(() => {
     // Fetch history when the component mounts
     fetchHistory();
