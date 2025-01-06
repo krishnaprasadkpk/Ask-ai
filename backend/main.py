@@ -16,7 +16,7 @@ app=FastAPI(lifespan=lifespan)
 app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000",
-                       "https://ask-ai.up.railway.app/"],
+                       "https://ask-ai.up.railway.app"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
