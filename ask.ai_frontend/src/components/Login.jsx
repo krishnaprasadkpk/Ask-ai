@@ -72,7 +72,7 @@ const Login = () => {
           // Store the JWT token in localStorage or cookies
           
   
-          alert("Login successful!");
+          // alert("Login successful!");
           navigate("/home"); // Redirect to the home page
         } else {
           alert("Please enter both email and password.");

@@ -57,6 +57,9 @@ body {
 }
 
 .sidebar li {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 10px;
   margin: 5px 0;
   background: #2d3e50;
@@ -71,6 +74,11 @@ body {
 
 .sidebar li:hover {
   background: #bdc3c7;
+}
+
+li:hover .delete-icon {
+  opacity: 1; /* Show the delete button on hover */
+  transform: scale(1.2); /* Slightly enlarge the icon */
 }
 
 .sidebar-header {
@@ -131,7 +139,7 @@ textarea {
 
 .btn-generate {
   padding: 10px 20px;
-  background: #007bff;
+  background:#2d3e50ff;
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -139,7 +147,7 @@ textarea {
 }
 
 .btn-generate:hover {
-  background: #0056b3;
+  background:#1c2b3a;
 }
 
 .character-gallery {

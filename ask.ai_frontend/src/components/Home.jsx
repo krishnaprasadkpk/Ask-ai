@@ -8,6 +8,7 @@ import Box from '@mui/material/Box';
 import { MdAddCircleOutline } from "react-icons/md";
 import ReactModal from "react-modal";
 import { AiOutlineClose } from "react-icons/ai";
+import { MdDeleteOutline } from "react-icons/md";
 
 
 const Home = () => {
@@ -128,31 +129,29 @@ const Home = () => {
         `http://127.0.0.1:8000/generated_characters/${script_id}`
       );
       setCharacters(getResponse.data);
-      
-      if (!history.some(item => item.prompt === prompt)) {
-        const newHistoryItem = {
-          prompt: prompt,
-          characters: getResponse.data,
-          generated_time: new Date().toISOString(),
-        };
-        console.log(newHistoryItem);
-        // Save the history to the backend
-        await axios.post(
-          "http://127.0.0.1:8000/save-prompt",
-          newHistoryItem,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
 
-        // Update local history state
-        setHistory(prev => [newHistoryItem, ...prev]);
-      }
+      // const generatedCharacters = getResponse.data;
+
+      // const newHistoryItem = {
+      //   script_id: script_id,
+      //   script: prompt,  // Make sure this matches your backend expected format
+      //   characters: generatedCharacters.map(char => ({
+      //     character_name: char.character_name,
+      //     character_description: char.character_description,
+      //     image_url: char.image_url
+      //   })),
+        
+      // };
+      
+      
+      
+
+          // Update local history state
+      // setHistory(prevHistory => [newHistoryItem, ...prevHistory]);
+      
 
       
-      setPrompt("");
+      await fetchHistory();
       // if (!history.includes(prompt)) {
       //   setHistory(prev => [prompt, ...prev]);
       // }
@@ -243,7 +242,40 @@ const Home = () => {
     setCharacters([]); // Clear the characters array
   };
 
-  
+  const handleDeleteScript = async (scriptId, e) => {
+    e.stopPropagation(); // Prevent triggering the handlePromptClick when clicking delete
+    
+    try {
+      const token = authState.token;
+      if (!token) {
+        console.error("Token not found");
+        return;
+      }
+
+      // Call the delete endpoint
+      await axios.delete(`http://127.0.0.1:8000/delete-script/${scriptId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Update the history state after successful deletion
+      setHistory(prevHistory => prevHistory.filter(item => item.script_id !== scriptId));
+
+      // If the deleted script was currently displayed, clear the prompt and characters
+      if (prompt && characters.length > 0) {
+        const currentScript = history.find(item => item.script === prompt);
+        if (currentScript && currentScript.script_id === scriptId) {
+          setPrompt("");
+          setCharacters([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting script:", error);
+      alert("Failed to delete script. Please try again.");
+    }
+
+  }
 
 
   return (
@@ -290,7 +322,22 @@ const Home = () => {
                 title={item.script} // Shows full prompt on hover
                 onClick={() => handlePromptClick(item)}
               >
-                {item.script.length > 30 ? item.script.slice(0, 30) + "..." : item}
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {item.script.length > 30 ? item.script.slice(0, 30) + "..." : item.script}
+                </span>
+                <MdDeleteOutline
+                  onClick={(e) => handleDeleteScript(item.script_id, e)}
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    color: 'pink',
+                    marginLeft: '8px',
+                    opacity: 1,
+                    transition: 'opacity 0.2s ease',
+                  }}
+                  className="delete-icon"
+                  title="Delete script"
+                />
               </li>
             ))}
           </ul>
@@ -302,11 +349,14 @@ const Home = () => {
             <h1>Ask.AI</h1>
             <p>Generate characters from your imagination!</p>
           </header>
+          
+
+
           <div className="prompt-container">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter your prompt..."
+              placeholder="Enter your Script..."
             ></textarea>
             <button onClick={handleGenerate} className="btn-generate">
               Generate Characters
